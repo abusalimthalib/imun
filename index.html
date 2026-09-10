@@ -65,6 +65,16 @@
         ]
       },
       {
+  "id": "Ca",
+  "name": "Kalsium",
+  "role": "Penting untuk signaling sel T, tapi kelebihan dapat menghambat penyerapan magnesium dan zinc, serta berpotensi meningkatkan peradangan bila tidak seimbang.",
+  "links": [
+    {"target": "Mg", "type": "antagonist", "note": "Kalsium tinggi hambat penyerapan magnesium di usus."},
+    {"target": "Zn", "type": "antagonist", "note": "Asupan kalsium >1000 mg/hari dapat kurangi penyerapan zinc."},
+    {"target": "D3", "type": "support", "note": "Vitamin D3 diperlukan untuk penyerapan kalsium yang efisien."}
+  ]
+}
+      {
         "id": "Cu",
         "name": "Copper",
         "role": "Dibutuhkan untuk fungsi sel T sitotoksik dan enzim antioksidan SOD.",
@@ -193,7 +203,7 @@
     nodeGroup.append("circle")
       .attr("r", 20)
       .attr("fill", d => {
-        if (['Zn','Cu','Mg','Fe','B'].includes(d.id)) return "#4a90e2";
+        if (['Zn','Cu','Mg','Fe','B','Ca'].includes(d.id)) return "#4a90e2";
         else return "#50c878";
       })
       .attr("stroke", "#333")
