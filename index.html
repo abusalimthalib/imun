@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Narrative Network: Nutrisi & Sel T</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
+    #graph { width: 100%; height: 500px; border: 1px solid #eee; border-radius: 8px; background: white; }
+    #info { margin-top: 20px; padding: 15px; background: white; border-radius: 8px; min-height: 100px; }
+    .node { stroke: #fff; stroke-width: 1.5px; cursor: pointer; }
+    .node:hover { stroke: #000; }
+    .link-synergy { stroke: #2e8b57; stroke-width: 2px; }
+    .link-antagonist { stroke: #cd5c5c; stroke-width: 2px; }
+    .link-support { stroke: #4682b4; stroke-width: 1.5px; }
+    h3 { margin: 0 0 10px 0; color: #2c3e50; }
+    p { margin: 0; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <h1>Narrative Network: Nutrisi & Sel T</h1>
+  <div id="graph"></div>
+  <div id="info">Klik salah satu nutrien di atas untuk melihat perannya dan hubungannya dengan nutrien lain.</div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script>
+    const width = document.getElementById('graph').clientWidth;
+    const height = 500;
+
+    const svg = d3.select("#graph")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    fetch('nutrients.json')
+      .then(res => res.json())
+      .then(data => {
+        const nodes = data.map(d => ({...d}));
+        const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+        const links = [];
+        nodes.forEach(n => {
+          if (n.links) {
+            n.links.forEach(link => {
+              if (nodeMap.has(link.target)) {
+                links.push({
+                  source: n.id,
+                  target: link.target,
+                  type: link.type
+                });
+              }
+            });
+          }
+        });
+
+        const simulation = d3.forceSimulation(nodes)
+          .force("link", d3.forceLink(links).id(d => d.id).distance(100))
+          .force("charge", d3.forceManyBody().strength(-300))
+          .force("center", d3.forceCenter(width / 2, height / 2));
+
+        const link = svg.append("g")
+          .selectAll("line")
+          .data(links)
+          .enter()
+          .append("line")
+          .attr("class", d => `link-${d.type}`);
+
+        const node = svg.append("g")
+          .selectAll("circle")
+          .data(nodes)
+          .enter()
+          .append("circle")
+          .attr("r", 12)
+          .attr("class", "node")
+          .attr("fill", d => {
+            if (d.id === 'Zn' || d.id === 'Cu' || d.id === 'Mg' || d.id === 'Fe' || d.id === 'Boron') return "#4a90e2";
+            else return "#50c878";
+          })
+          .on("click", (event, d) => {
+            let html = `<h3>${d.name}</h3><p><strong>Peran pada Sel T:</strong> ${d.role}</p>`;
+            if (d.links && d.links.length > 0) {
+              html += `<p><strong>Hubungan:</strong></p><ul>`;
+              d.links.forEach(l => {
+                const arrow = l.type === 'antagonist' ? '⚠️' : '✅';
+                html += `<li>${arrow} <strong>${l.target}:</strong> ${l.note}</li>`;
+              });
+              html += `</ul>`;
+            }
+            document.getElementById('info').innerHTML = html;
+          });
+
+        simulation.on("tick", () => {
+          link
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
+
+          node
+            .attr("cx", d => d.x)
+            .attr("cy", d => d.y);
+        });
+      });
+  </script>
+</body>
+</html>
