@@ -1,117 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Narrative Network</title>
-  <style>
-    body { font-family: sans-serif; padding: 20px; background: #f4f4f9; }
-    h1 { text-align: center; color: #333; }
-    #graph-container { width: 100%; height: 500px; border: 1px solid #ccc; background: white; margin-bottom: 20px; }
-    #info-box { padding: 15px; background: white; border: 1px solid #ccc; min-height: 100px; }
-    .node text { pointer-events: none; font-weight: bold; font-size: 11px; fill: black; stroke: white; stroke-width: 1px; }
-    .link-line { stroke-opacity: 0.6; }
-  </style>
+    <meta charset="UTF-8">
+    <title>Nutrient Map Debug</title>
+    <style>
+        body { font-family: Arial; text-align: center; }
+        svg { border: 1px solid #ccc; background: white; }
+        circle { stroke: #fff; stroke-width: 2px; cursor: pointer; }
+        text { font-weight: bold; fill: black; stroke: white; stroke-width: 0.5px; pointer-events: none; }
+    </style>
 </head>
 <body>
-  <h1>Peta Interaksi Nutrisi & Sel T</h1>
-  <div id="graph-container"></div>
-  <div id="info-box">Klik pada lingkaran untuk melihat detail narasi.</div>
 
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script>
-    // DATA MURNI - AMAN DI-PARSE
-    const data = {
-      nodes: [
-        {id: "Zn", label: "Zinc", role: "Diferensiasi sel T dan integritas mukosa.", type: "mineral"},
-        {id: "Mg", label: "Magnesium", role: "Aktivator Vitamin D dan stabil mitokondria.", type: "mineral"},
-        {id: "Fe", label: "Besi", role: "Proliferasi limfosit, tapi hati-hati radikal bebas.", type: "mineral"},
-        {id: "Ca", label: "Kalsium", role: "Signaling sel, namun berlebih menghambat Mg/Zn.", type: "mineral"},
-        {id: "Cu", label: "Tembakau", role: "Fungsi sitotoksik sel T.", type: "mineral"},
-        {id: "B", label: "Boron", role: "Modulator inflamasi halus.", type: "mineral"},
-        {id: "VitD", label: "Vit D3", role: "Imunoregulasi dan anti-autoimun.", type: "vitamin"},
-        {id: "VitA", label: "Vit A", role: "Epitel saluran napas.", type: "vitamin"},
-        {id: "VitC", label: "Vit C", role: "Antioksidan utama sel imun.", type: "vitamin"}
-      ],
-      links: [
-        {source: "Zn", target: "Mg", type: "synergy", note: "Saling mendukung homeostasis."},
-        {source: "Mg", target: "VitD", type: "synergy", note: "Mg wajib untuk aktivasi Vit D."},
-        {source: "Ca", target: "Mg", type: "antagonist", note: "Persaingan penyerapan di usus."},
-        {source: "Ca", target: "Zn", type: "antagonist", note: "Ca tinggi hambat Zn."},
-        {source: "Zn", target: "Cu", type: "antagonist", note: "Rasio harus dijaga seimbang."},
-        {source: "Fe", target: "VitC", type: "synergy", note: "Vit C bantu serap Fe nabati."},
-        {source: "B", target: "Mg", type: "support", note: "Boron tingkatkan retensi Mg."}
-      ]
-    };
+<h2>Peta Nutrisi (Debug Mode)</h2>
+<div id="chart"></div>
+<div id="details" style="padding: 20px; width: 80%; margin: auto; border-top: 1px solid #ddd;">
+    <strong>Pilih node untuk info:</strong>
+</div>
 
-    const width = document.getElementById("graph-container").clientWidth;
-    const height = 500;
+<!-- Muat D3 dari CDN -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+    // Data Sederhana & Teruji
+    const nodes = [
+        {id: 'Zn', name: 'Zinc'}, 
+        {id: 'Mg', name: 'Magnesium'}, 
+        {id: 'Ca', name: 'Kalsium'}, 
+        {id: 'D3', name: 'Vit D3'}
+    ];
 
-    const svg = d3.select("#graph-container")
-      .append("svg")
-      .attr("width", width)
-      .attr("height", height);
+    const links = [
+        {source: 'Zn', target: 'Mg'},
+        {source: 'Ca', target: 'Mg'},
+        {source: 'Mg', target: 'D3'}
+    ];
 
-    // SIMULASI GAYA
-    const simulation = d3.forceSimulation(data.nodes)
-      .force("link", d3.forceLink(data.links).id(d => d.id))
-      .force("charge", d3.forceManyBody().strength(-300))
-      .force("center", d3.forceCenter(width / 2, height / 2));
+    const width = 800, height = 500;
 
-    // GAMBAR GARIS
-    const link = svg.append("g")
-      .selectAll("line")
-      .data(data.links)
-      .enter()
-      .append("line")
-      .attr("class", "link-line")
-      .attr("stroke", d => {
-        if (d.type === "antagonist") return "red";
-        if (d.type === "synergy") return "green";
-        return "blue";
-      })
-      .attr("stroke-width", 2);
+    if (!window.d3) {
+        document.body.innerHTML = "<h1 style='color:red'>ERROR: Pustaka D3.js tidak dapat dimuat.<br/>Coba matikan AdBlocker atau ganti browser.</h1>";
+        return;
+    }
 
-    // GAMBAR NODE + TEKS
-    const node = svg.append("g")
-      .selectAll("g")
-      .data(data.nodes)
-      .enter()
-      .append("g")
-      .on("click", function(event, d) {
-        let info = "<strong>" + d.label + "</strong><br/>";
-        info += "Peran: " + d.role + "<br/><hr style='margin:5px 0'><em>Interaksi:</em>";
-        
-        // Cari link terkait node ini
-        const connections = data.links.filter(l => l.source.id === d.id || l.target.id === d.id);
-        connections.forEach(c => {
-            const otherId = c.source.id === d.id ? c.target.id : c.source.id;
-            const status = c.type === "antagonist" ? "⚠️ Melawan" : "✅ Membantu";
-            info += "<br/>&nbsp;&nbsp;- " + status + " " + otherId + ": " + c.note;
+    const svg = d3.select("#chart")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    const simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(d => d.id))
+        .force("charge", d3.forceManyBody().strength(-200))
+        .force("center", d3.forceCenter(width/2, height/2));
+
+    const linkElement = svg.append("g")
+        .selectAll("line")
+        .data(links)
+        .enter()
+        .append("line")
+        .attr("stroke", "#999")
+        .attr("stroke-width", 2);
+
+    const nodeElement = svg.append("g")
+        .selectAll("circle")
+        .data(nodes)
+        .enter()
+        .append("circle")
+        .attr("r", 25)
+        .attr("fill", "#4a90e2")
+        .on("click", function(event, d) {
+            document.getElementById('details').innerHTML = 
+                "<strong>Anda memilih:</strong> " + d.name + "<br>" +
+                "ID Internal: " + d.id;
         });
-        document.getElementById("info-box").innerHTML = info;
-      });
 
-    // Lingkaran
-    node.append("circle")
-      .attr("r", 22)
-      .attr("fill", d => d.type === "mineral" ? "#4a90e2" : "#50c878");
+    // Tambahkan label teks DI ATAS lingkaran
+    nodeElement.append("text")
+        .attr("dy", "0.35em")
+        .attr("text-anchor", "middle")
+        .text(d => d.id);
 
-    // Teks Inisial
-    node.append("text")
-      .attr("dy", "0.35em")
-      .attr("text-anchor", "middle")
-      .text(d => d.id);
-
-    // PEMBARUIKAN POSISI
     simulation.on("tick", () => {
-      link
-        .attr("x1", d => d.source.x)
-        .attr("y1", d => d.source.y)
-        .attr("x2", d => d.target.x)
-        .attr("y2", d => d.target.y);
+        linkElement
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
 
-      node.attr("transform", d => `translate(${d.x},${d.y})`);
+        nodeElement.attr("transform", d => `translate(${d.x},${d.y})`);
     });
-  </script>
+</script>
+
 </body>
 </html>
