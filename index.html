@@ -47,33 +47,24 @@
   <h1>Narrative Network: Nutrisi & Sel T</h1>
   <div id="graph"></div>
   <div id="info">
-    Klik salah satu nutrien di atas untuk melihat perannya dalam sistem imun dan hubungannya dengan nutrien lain.
+    Klik salah satu nutrien untuk melihat peran dan hubungannya. Jika kosong, klik area kosong graf sekali untuk reset tampilan jika node tersangkut di luar layar.
   </div>
 
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script>
+    // DATA UTAMA - SUDAH MELIPUTI CA
     const rawData = [
       {
         "id": "Zn",
         "name": "Zinc",
         "role": "Penting untuk diferensiasi & proliferasi Sel T, aktivasi thymulin, dan integritas sawar mukosa.",
         "links": [
-          {"target": "VitA", "type": "synergy", "note": "Saling mendukung metabolisme dan fungsi imun."},
+          {"target": "A", "type": "synergy", "note": "Saling mendukung metabolisme dan fungsi imun."},
           {"target": "Cu", "type": "antagonist", "note": "Rasio ideal Zn:Cu = 8–10:1. Zn berlebih hambat penyerapan Cu."},
           {"target": "Fe", "type": "antagonist", "note": "Bersaing dalam penyerapan usus jika dikonsumsi bersamaan."},
           {"target": "Mg", "type": "support", "note": "Mg membantu homeostasis Zn dalam sel imun."}
         ]
       },
-      {
-  "id": "Ca",
-  "name": "Kalsium",
-  "role": "Penting untuk signaling sel T, tapi kelebihan dapat menghambat penyerapan magnesium dan zinc, serta berpotensi meningkatkan peradangan bila tidak seimbang.",
-  "links": [
-    {"target": "Mg", "type": "antagonist", "note": "Kalsium tinggi hambat penyerapan magnesium di usus."},
-    {"target": "Zn", "type": "antagonist", "note": "Asupan kalsium >1000 mg/hari dapat kurangi penyerapan zinc."},
-    {"target": "D3", "type": "support", "note": "Vitamin D3 diperlukan untuk penyerapan kalsium yang efisien."}
-  ]
-}
       {
         "id": "Cu",
         "name": "Copper",
@@ -88,8 +79,8 @@
         "name": "Magnesium",
         "role": "Aktivator vitamin D → modulasi Sel T regulator (Treg). Stabilkan fungsi mitokondria sel imun.",
         "links": [
-          {"target": "VitD3", "type": "synergy", "note": "Tanpa Mg, vitamin D3 tidak aktif."},
-          {"target": "Boron", "type": "synergy", "note": "Boron tingkatkan retensi dan efek Mg."},
+          {"target": "D3", "type": "synergy", "note": "Tanpa Mg, vitamin D3 tidak aktif."},
+          {"target": "B", "type": "synergy", "note": "Boron tingkatkan retensi dan efek Mg."},
           {"target": "Ca", "type": "antagonist", "note": "Kalsium tinggi hambat penyerapan Mg."}
         ]
       },
@@ -98,9 +89,19 @@
         "name": "Iron",
         "role": "Diperlukan untuk proliferasi limfosit, tapi berlebih bersifat pro-oksidan dan mendukung patogen.",
         "links": [
-          {"target": "VitC", "type": "synergy", "note": "Vitamin C tingkatkan penyerapan besi non-heme."},
+          {"target": "C", "type": "synergy", "note": "Vitamin C tingkatkan penyerapan besi non-heme."},
           {"target": "Zn", "type": "antagonist", "note": "Hindari konsumsi bersamaan; beri jeda 2–3 jam."},
-          {"target": "Cu", "type": "support", "note": "Cu penting dalam metabolisme Fe untuk eritropoiesis & imun."}
+          {"target": "Cu", "type": "support", "note": "Cu penting dalam metabolisme Fe."}
+        ]
+      },
+      {
+        "id": "Ca",  // NODE BARU INI
+        "name": "Kalsium",
+        "role": "Penting untuk signaling sel T, tapi kelebihan dapat menghambat penyerapan magnesium dan zinc.",
+        "links": [
+          {"target": "Mg", "type": "antagonist", "note": "Kompetisi penyerapan di usus."},
+          {"target": "Zn", "type": "antagonist", "note": "Asupan tinggi kurangi absorpsi Zn."},
+          {"target": "D3", "type": "support", "note": "Butuh Vit D untuk diserap optimal."}
         ]
       },
       {
@@ -109,16 +110,16 @@
         "role": "Modulasi inflamasi, tingkatkan bioavailabilitas Mg dan vitamin D.",
         "links": [
           {"target": "Mg", "type": "synergy", "note": "Efek Boron optimal hanya bila Mg cukup."},
-          {"target": "VitD3", "type": "synergy", "note": "Meningkatkan kadar D3 aktif dalam darah."}
+          {"target": "D3", "type": "synergy", "note": "Meningkatkan kadar D3 aktif."}
         ]
       },
       {
         "id": "D3",
         "name": "Vitamin D3",
-        "role": "Induksi Sel T regulator, tekan autoimun, tingkatkan ekspresi reseptor pada sel dendritik.",
+        "role": "Induksi Sel T regulator, tekan autoimun, tingkatkan ekspresi reseptor sel dendritik.",
         "links": [
           {"target": "Mg", "type": "synergy", "note": "Wajib untuk konversi D3 menjadi bentuk aktif."},
-          {"target": "B", "type": "synergy", "note": "Tingkatkan kadar dan stabilitas D3."}
+          {"target": "B", "type": "synergy", "note": "Tingkatkan stabilitas D3."}
         ]
       },
       {
@@ -126,28 +127,27 @@
         "name": "Vitamin A",
         "role": "Diferensiasi Sel T helper, jaga integritas epitel saluran napas.",
         "links": [
-          {"target": "Zn", "type": "synergy", "note": "Zn dibutuhkan untuk transport Vit A; Vit A butuh Zn untuk metabolisme."}
+          {"target": "Zn", "type": "synergy", "note": "Zn dibutuhkan untuk transport Vit A."}
         ]
       },
       {
         "id": "C",
         "name": "Vitamin C",
-        "role": "Dukung fungsi limfosit T, regenerasi glutathione, antioksidan utama sel imun.",
+        "role": "Dukung fungsi limfosit T, regenerasi glutathione, antioksidan utama.",
         "links": [
-          {"target": "Fe", "type": "synergy", "note": "Tingkatkan penyerapan besi dari sumber nabati."},
-          {"target": "E", "type": "synergy", "note": "Regenerasi vitamin E teroksidasi."}
+          {"target": "Fe", "type": "synergy", "note": "Tingkatkan penyerapan besi nabati."}
         ]
       }
     ];
 
+    // LOGIKA VISUALISASI
     const width = document.getElementById('graph').clientWidth;
     const height = 540;
 
     const svg = d3.select("#graph")
       .append("svg")
       .attr("width", width)
-      .attr("height", height)
-      .style("background", "#ffffff");
+      .attr("height", height);
 
     const nodes = rawData.map(d => ({...d}));
     const nodeMap = new Map(nodes.map(n => [n.id, n]));
@@ -156,12 +156,15 @@
     nodes.forEach(n => {
       if (n.links) {
         n.links.forEach(link => {
+          // Validasi ketat: pastikan target ada
           if (nodeMap.has(link.target)) {
             links.push({
               source: n.id,
               target: link.target,
               type: link.type
             });
+          } else {
+            console.warn(`Link dari ${n.id} ke ${link.target} diabaikan karena target tidak ditemukan.`);
           }
         });
       }
@@ -171,8 +174,11 @@
       .force("link", d3.forceLink(links).id(d => d.id).distance(110))
       .force("charge", d3.forceManyBody().strength(-350))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide(28));
+      .force("collide", d3.forceCollide(25))
+      .force("x", d3.forceX(width / 2).strength(0.05))
+      .force("y", d3.forceY(height / 2).strength(0.05));
 
+    // Gambar Garis
     const link = svg.append("g")
       .selectAll("line")
       .data(links)
@@ -180,12 +186,17 @@
       .append("line")
       .attr("class", d => `link-${d.type}`);
 
+    // Gambar Node Group
     const nodeGroup = svg.append("g")
       .selectAll(".node-group")
       .data(nodes)
       .enter()
       .append("g")
       .attr("class", "node-group")
+      .call(d3.drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended))
       .on("click", (event, d) => {
         let html = `<h3>${d.name}</h3><p><strong>Peran pada Sel T:</strong> ${d.role}</p>`;
         if (d.links && d.links.length > 0) {
@@ -203,22 +214,23 @@
     nodeGroup.append("circle")
       .attr("r", 20)
       .attr("fill", d => {
-        if (['Zn','Cu','Mg','Fe','B','Ca'].includes(d.id)) return "#4a90e2";
-        else return "#50c878";
+        const minerals = ['Zn','Cu','Mg','Fe','Ca','B'];
+        return minerals.includes(d.id) ? "#4a90e2" : "#50c878";
       })
       .attr("stroke", "#333")
       .attr("stroke-width", 0.5);
 
-    // Teks (ini kunci!)
+    // Teks Label (Pasti Terlihat)
     nodeGroup.append("text")
       .attr("dy", "0.35em")
       .attr("text-anchor", "middle")
-      .attr("font-size", "10px")
-      .attr("fill", "#000")           // HITAM — pasti terlihat
+      .attr("font-size", "11px")
+      .attr("fill", "#ffffff")
       .attr("font-weight", "bold")
-      .attr("pointer-events", "none") // biar tidak ganggu klik
+      .attr("pointer-events", "none")
       .text(d => d.id);
 
+    // Tick Simulation
     simulation.on("tick", () => {
       link
         .attr("x1", d => d.source.x)
@@ -229,6 +241,22 @@
       nodeGroup
         .attr("transform", d => `translate(${d.x},${d.y})`);
     });
+
+    // Fungsi Drag (Biarkan user bisa geser node agar lebih rapi)
+    function dragstarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+    function dragended(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
   </script>
 </body>
 </html>
