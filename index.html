@@ -117,39 +117,63 @@
     .append("line")
     .attr("class", d => `link-${d.type}`);
 
-  const node = svg.append("g")
-    .selectAll("circle")
-    .data(nodes)
-    .enter()
-    .append("circle")
-    .attr("r", 12)
-    .attr("class", "node")
-    .attr("fill", d => {
-      if (d.id === 'Zn' || d.id === 'Cu' || d.id === 'Mg' || d.id === 'Fe' || d.id === 'Boron') return "#4a90e2";
-      else return "#50c878";
-    })
-    .on("click", (event, d) => {
-      let html = `<h3>${d.name}</h3><p><strong>Peran pada Sel T:</strong> ${d.role}</p>`;
-      if (d.links && d.links.length > 0) {
-        html += `<p><strong>Hubungan:</strong></p><ul>`;
-        d.links.forEach(l => {
-          const arrow = l.type === 'antagonist' ? '⚠️' : '✅';
-          html += `<li>${arrow} <strong>${l.target}:</strong> ${l.note}</li>`;
-        });
-        html += `</ul>`;
-      }
-      document.getElementById('info').innerHTML = html;
-    });
+  // ... [bagian atas simulasi tetap sama] ...
+
+const link = svg.append("g")
+  .selectAll("line")
+  .data(links)
+  .enter()
+  .append("line")
+  .attr("class", d => `link-${d.type}`);
+
+// Ganti bagian node lama dengan yang ini:
+const nodeGroup = svg.append("g")
+  .selectAll(".node-group")
+  .data(nodes)
+  .enter()
+  .append("g")
+  .attr("class", "node-group")
+  .on("click", (event, d) => {
+    let html = `<h3>${d.name}</h3><p><strong>Peran pada Sel T:</strong> ${d.role}</p>`;
+    if (d.links && d.links.length > 0) {
+      html += `<p><strong>Hubungan:</strong></p><ul>`;
+      d.links.forEach(l => {
+        const arrow = l.type === 'antagonist' ? '⚠️' : '✅';
+        html += `<li>${arrow} <strong>${l.target}:</strong> ${l.note}</li>`;
+      });
+      html += `</ul>`;
+    }
+    document.getElementById('info').innerHTML = html;
+  });
+
+// Tambahkan lingkaran
+nodeGroup.append("circle")
+  .attr("r", 16)
+  .attr("class", "node")
+  .attr("fill", d => {
+    if (['Zn','Cu','Mg','Fe','Boron'].includes(d.id)) return "#4a90e2";
+    else return "#50c878";
+  });
+
+// Tambahkan teks (inisial)
+nodeGroup.append("text")
+  .attr("dy", "0.35em")
+  .attr("text-anchor", "middle")
+  .attr("font-size", "10px")
+  .attr("fill", "white")
+  .attr("font-weight", "bold")
+  .text(d => d.id);
+
 
   simulation.on("tick", () => {
-    link
-      .attr("x1", d => d.source.x)
-      .attr("y1", d => d.source.y)
-      .attr("x2", d => d.target.x)
-      .attr("y2", d => d.target.y);
+  link
+    .attr("x1", d => d.source.x)
+    .attr("y1", d => d.source.y)
+    .attr("x2", d => d.target.x)
+    .attr("y2", d => d.target.y);
 
-    node
-      .attr("cx", d => d.x)
-      .attr("cy", d => d.y);
-  });
+  nodeGroup
+    .attr("transform", d => `translate(${d.x},${d.y})`);
+});
+
 </script>
