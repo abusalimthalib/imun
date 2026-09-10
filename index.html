@@ -19,11 +19,11 @@
     }
     #graph {
       width: 100%;
-      height: 520px;
-      border: 1px solid #eee;
+      height: 540px;
+      border: 1px solid #ddd;
       border-radius: 10px;
-      background: white;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      background: #fff;
+      overflow: hidden;
     }
     #info {
       margin-top: 20px;
@@ -34,13 +34,7 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
       line-height: 1.6;
     }
-    .node-group {
-      cursor: pointer;
-    }
-    .node-group:hover circle {
-      stroke: #000;
-      stroke-width: 2px;
-    }
+    .node-group { cursor: pointer; }
     .link-synergy { stroke: #2e8b57; stroke-width: 2px; }
     .link-antagonist { stroke: #cd5c5c; stroke-width: 2px; }
     .link-support { stroke: #4682b4; stroke-width: 1.5px; }
@@ -100,7 +94,7 @@
         ]
       },
       {
-        "id": "Boron",
+        "id": "B",
         "name": "Boron",
         "role": "Modulasi inflamasi, tingkatkan bioavailabilitas Mg dan vitamin D.",
         "links": [
@@ -109,16 +103,16 @@
         ]
       },
       {
-        "id": "VitD3",
+        "id": "D3",
         "name": "Vitamin D3",
         "role": "Induksi Sel T regulator, tekan autoimun, tingkatkan ekspresi reseptor pada sel dendritik.",
         "links": [
           {"target": "Mg", "type": "synergy", "note": "Wajib untuk konversi D3 menjadi bentuk aktif."},
-          {"target": "Boron", "type": "synergy", "note": "Tingkatkan kadar dan stabilitas D3."}
+          {"target": "B", "type": "synergy", "note": "Tingkatkan kadar dan stabilitas D3."}
         ]
       },
       {
-        "id": "VitA",
+        "id": "A",
         "name": "Vitamin A",
         "role": "Diferensiasi Sel T helper, jaga integritas epitel saluran napas.",
         "links": [
@@ -126,23 +120,24 @@
         ]
       },
       {
-        "id": "VitC",
+        "id": "C",
         "name": "Vitamin C",
         "role": "Dukung fungsi limfosit T, regenerasi glutathione, antioksidan utama sel imun.",
         "links": [
           {"target": "Fe", "type": "synergy", "note": "Tingkatkan penyerapan besi dari sumber nabati."},
-          {"target": "VitE", "type": "synergy", "note": "Regenerasi vitamin E teroksidasi."}
+          {"target": "E", "type": "synergy", "note": "Regenerasi vitamin E teroksidasi."}
         ]
       }
     ];
 
     const width = document.getElementById('graph').clientWidth;
-    const height = 520;
+    const height = 540;
 
     const svg = d3.select("#graph")
       .append("svg")
       .attr("width", width)
-      .attr("height", height);
+      .attr("height", height)
+      .style("background", "#ffffff");
 
     const nodes = rawData.map(d => ({...d}));
     const nodeMap = new Map(nodes.map(n => [n.id, n]));
@@ -163,10 +158,10 @@
     });
 
     const simulation = d3.forceSimulation(nodes)
-      .force("link", d3.forceLink(links).id(d => d.id).distance(120))
-      .force("charge", d3.forceManyBody().strength(-400))
+      .force("link", d3.forceLink(links).id(d => d.id).distance(110))
+      .force("charge", d3.forceManyBody().strength(-350))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide(30));
+      .force("collision", d3.forceCollide(28));
 
     const link = svg.append("g")
       .selectAll("line")
@@ -194,20 +189,24 @@
         document.getElementById('info').innerHTML = html;
       });
 
+    // Lingkaran
     nodeGroup.append("circle")
-      .attr("r", 18)
-      .attr("class", "node")
+      .attr("r", 20)
       .attr("fill", d => {
-        if (['Zn','Cu','Mg','Fe','Boron'].includes(d.id)) return "#4a90e2";
+        if (['Zn','Cu','Mg','Fe','B'].includes(d.id)) return "#4a90e2";
         else return "#50c878";
-      });
+      })
+      .attr("stroke", "#333")
+      .attr("stroke-width", 0.5);
 
+    // Teks (ini kunci!)
     nodeGroup.append("text")
       .attr("dy", "0.35em")
       .attr("text-anchor", "middle")
-      .attr("font-size", "11px")
-      .attr("fill", "white")
+      .attr("font-size", "10px")
+      .attr("fill", "#000")           // HITAM — pasti terlihat
       .attr("font-weight", "bold")
+      .attr("pointer-events", "none") // biar tidak ganggu klik
       .text(d => d.id);
 
     simulation.on("tick", () => {
